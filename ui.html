@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Get Selected Elements</title>
+  <style>
+    body {
+      height: 600px;
+      width: 400px;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+    .card {
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin-top: 10px;
+      background: #f9f9f9;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .card-header h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+    .collapsed .card-content {
+      display: none;
+    }
+    .preview {
+      margin: 10px 0;
+      text-align: center;
+    }
+    .preview img {
+      max-width: 100px;
+      background: #444444;
+      border-radius: 4px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+  </style>
+</head>
+<body>
+  <h2>Get Selected Elements</h2>
+  <button id="get-selection">Get Selection</button>
+  <div id="selection-info"></div>
+
+  <script>
+    document.getElementById('get-selection').onclick = () => {
+      parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
+    };
+
+    onmessage = (event) => {
+      const message = event.data.pluginMessage;
+      if (message.type === 'selection-info') {
+        const data = message.data;
+        const container = document.getElementById('selection-info');
+        container.innerHTML = '';
+        data.forEach(node => container.appendChild(createCard(node, 0)));
+      }
+    };
+
+    function createCard(node, level) {
+      const card = document.createElement('div');
+      card.classList.add('card');
+      if (node.children) card.classList.add('collapsible');
+      if (level > 2) card.classList.add('collapsed');
+
+      const cardHeader = document.createElement('div');
+      cardHeader.classList.add('card-header');
+      cardHeader.innerHTML = `<h3>${node.name} (${node.type})</h3>`;
+      cardHeader.onclick = (e) => {
+        e.stopPropagation();
+        card.classList.toggle('collapsed');
+      };
+      card.appendChild(cardHeader);
+
+      const cardContent = document.createElement('div');
+      cardContent.classList.add('card-content');
+
+      const preview = document.createElement('div');
+      preview.classList.add('preview');
+      preview.innerHTML = `<img src="${node.preview}" alt="${node.name}">`;
+      cardContent.appendChild(preview);
+
+      const table = document.createElement('table');
+      for (let key in node) {
+        if (key !== 'children' && key !== 'preview') {
+          const row = table.insertRow();
+          const cell1 = row.insertCell(0);
+          const cell2 = row.insertCell(1);
+          cell1.textContent = key;
+          cell2.textContent = node[key];
+        }
+      }
+      cardContent.appendChild(table);
+
+      if (node.children) {
+        const childrenContainer = document.createElement('div');
+        node.children.forEach(child => childrenContainer.appendChild(createCard(child, level + 1)));
+        cardContent.appendChild(childrenContainer);
+      }
+
+      card.appendChild(cardContent);
+      return card;
+    }
+  </script>
+</body>
+</html>
