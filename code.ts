@@ -1,4 +1,3 @@
-// 显示插件的 UI 界面
 figma.showUI(__html__, { width: 450, height: 1200 });
 
 // 递归获取所有子元素的信息和预览图，计算绝对坐标
@@ -56,6 +55,4 @@ figma.ui.onmessage = async (msg: { type: string }) => {
     // 将选中节点的信息发送回 UI
     figma.ui.postMessage({ type: 'selection-info', data: selectionInfo });
   }
-
-  // figma.closePlugin();
 };

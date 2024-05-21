@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <title>Get Selected Elements</title>
@@ -11,11 +12,13 @@
       padding: 20px;
       overflow-y: auto;
     }
+
     button {
       padding: 10px 20px;
       font-size: 16px;
       margin-bottom: 20px;
     }
+
     .card {
       border: 1px solid #ccc;
       border-radius: 8px;
@@ -24,66 +27,108 @@
       background: #f9f9f9;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     }
+
     .card-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       cursor: pointer;
     }
+
     .card-header h3 {
       margin: 0;
       font-size: 18px;
     }
+
     .collapsed .card-content {
       display: none;
     }
+
     .preview {
       margin: 10px 0;
       text-align: center;
     }
+
     .preview img {
       max-width: 100px;
       background: #444444;
       border-radius: 4px;
     }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 10px;
     }
-    table, th, td {
+
+    table,
+    th,
+    td {
       border: 1px solid #ddd;
     }
-    th, td {
+
+    th,
+    td {
       padding: 8px;
       text-align: left;
     }
+
     th {
       background-color: #f2f2f2;
     }
   </style>
 </head>
+
 <body>
   <h2>Get Selected Elements</h2>
   <button id="get-selection">Get Selection</button>
+  <button id="download-json" style="display:none;">Download JSON</button>
   <div id="selection-info"></div>
 
   <script>
+    let selectionData;
+
     document.getElementById('get-selection').onclick = () => {
       parent.postMessage({ pluginMessage: { type: 'get-selection' } }, '*');
+    };
+
+    document.getElementById('download-json').onclick = () => {
+      if (selectionData) {
+        const cleanedData = removePreviewFields(selectionData); // Remove preview fields before saving
+        const blob = new Blob([JSON.stringify(cleanedData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'selection-info.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
     };
 
     onmessage = (event) => {
       const message = event.data.pluginMessage;
       if (message.type === 'selection-info') {
-        const data = message.data;
+        selectionData = message.data;
         const container = document.getElementById('selection-info');
         container.innerHTML = '';
-        data.forEach(node => container.appendChild(createCard(node, 0)));
+        selectionData.forEach(node => container.appendChild(createCard(node, 0)));
+        document.getElementById('download-json').style.display = 'block';
       }
     };
 
-    function createCard(node, level) {
+    function removePreviewFields(data) {  // Remove preview fields before saving
+      return data.map(node => {
+        const { preview, ...rest } = node;
+        if (rest.children) {
+          rest.children = removePreviewFields(rest.children);
+        }
+        return rest;
+      });
+    }
+
+    function createCard(node, level) {  
       const card = document.createElement('div');
       card.classList.add('card');
       if (node.children) card.classList.add('collapsible');
@@ -129,4 +174,5 @@
     }
   </script>
 </body>
+
 </html>
